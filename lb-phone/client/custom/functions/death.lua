@@ -1,6 +1,6 @@
 local alreadyDead = false
 
-local function justDied()
+local function JustDied()
     alreadyDead = true
 
     OnDeath()
@@ -14,12 +14,12 @@ end
 
 AddEventHandler("CEventDeath", function(entities, entity, data)
     if entities[1] == PlayerPedId() and not alreadyDead then
-        justDied()
+        JustDied()
     end
 end)
 
 AddEventHandler("CEventEntityDamaged", function()
     if IsPedDeadOrDying(PlayerPedId(), false) and not alreadyDead then
-        justDied()
+        JustDied()
     end
 end)

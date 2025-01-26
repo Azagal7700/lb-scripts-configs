@@ -1,8 +1,4 @@
----@diagnostic disable: param-type-mismatch
-local pma = exports["pma-voice"]
-local mumble = exports["mumble-voip"]
-local toko = exports["tokovoip_script"]
-local MumbleIsPlayerTalking = MumbleIsPlayerTalking
+    local MumbleIsPlayerTalking = MumbleIsPlayerTalking
 local NetworkIsPlayerTalking = NetworkIsPlayerTalking
 
 function AddToCall(callId)
@@ -10,13 +6,13 @@ function AddToCall(callId)
 
     local success = pcall(function()
         if Config.Voice.System == "pma" then
-            pma:addPlayerToCall(callId)
+            exports["pma-voice"]:addPlayerToCall(callId)
         elseif Config.Voice.System == "mumble" then
-            mumble:addPlayerToCall(callId)
+            exports["mumble-voip"]:addPlayerToCall(callId)
         elseif Config.Voice.System == "salty" then
             TriggerServerEvent("phone:voice:addToCall", callId)
         elseif Config.Voice.System == "toko" then
-            toko:addPlayerToRadio(callId)
+            exports["tokovoip_script"]:addPlayerToRadio(callId)
         end
     end)
 
@@ -30,13 +26,13 @@ function RemoveFromCall(callId)
 
     local success = pcall(function()
         if Config.Voice.System == "pma" then
-            pma:removePlayerFromCall()
+            exports["pma-voice"]:removePlayerFromCall()
         elseif Config.Voice.System == "mumble" then
-            mumble:removePlayerFromCall()
+            exports["mumble-voip"]:removePlayerFromCall()
         elseif Config.Voice.System == "salty" then
             TriggerServerEvent("phone:voice:removeFromCall", callId)
         elseif Config.Voice.System == "toko" then
-            toko:removePlayerFromRadio(callId)
+            exports["tokovoip_script"]:removePlayerFromRadio(callId)
         end
     end)
 
@@ -108,19 +104,27 @@ CreateThread(function()
     end
 
     speakerEffect = CreateAudioSubmix("phonespeaker")
+
     SetAudioSubmixEffectRadioFx(speakerEffect, 0)
+    ---@diagnostic disable-next-line: param-type-mismatch
     SetAudioSubmixEffectParamInt(speakerEffect, 0, `default`, 1)
 
     callEffect = CreateAudioSubmix("phonecall")
+
     SetAudioSubmixEffectRadioFx(callEffect, 0)
+    ---@diagnostic disable-next-line: param-type-mismatch
     SetAudioSubmixEffectParamInt(callEffect, 0, `default`, 1)
 
     for hash, value in pairs(data) do
+        ---@diagnostic disable-next-line: param-type-mismatch
         SetAudioSubmixEffectParamFloat(speakerEffect, 0, hash, value)
+        ---@diagnostic disable-next-line: param-type-mismatch
         SetAudioSubmixEffectParamFloat(callEffect, 0, hash, value)
     end
 
+    ---@diagnostic disable-next-line: param-type-mismatch
     SetAudioSubmixEffectParamFloat(speakerEffect, 0, `rm_mix`, 0.15)
+    ---@diagnostic disable-next-line: param-type-mismatch
     SetAudioSubmixEffectParamFloat(callEffect, 0, `rm_mix`, 0.05)
 
     SetAudioSubmixOutputVolumes(speakerEffect, 0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
@@ -131,12 +135,14 @@ CreateThread(function()
 end)
 
 local voiceTargets = {}
+
 CreateThread(function()
     while true do
         local currentTargets = table.clone(voiceTargets)
 
         for source, audio in pairs(currentTargets) do
             MumbleAddVoiceTargetPlayerByServerId(1, source)
+
             if contains(watchingSources, source) then
                 MumbleSetVolumeOverrideByServerId(source, 1.0)
             else
@@ -151,26 +157,28 @@ end)
 
 RegisterNetEvent("phone:phone:setCallEffect", function(source, enabled)
     if Config.Voice.System == "pma" or Config.Voice.System == "mumble" and Config.Voice.CallEffects then
-        debugprint("setCallEffect", source, enabled and callEffect or -1)
         MumbleSetSubmixForServerId(source, enabled and callEffect or -1)
     end
 end)
 
 RegisterNetEvent("phone:phone:addVoiceTarget", function(sources, audio, phoneCall)
     if type(sources) ~= "table" then
-        sources = {sources}
+        sources = { sources }
     end
 
     for i = 1, #sources do
         local id = sources[i]
+
         if id == GetPlayerServerId(PlayerId()) or voiceTargets[id] then
             goto continue
         end
 
         voiceTargets[id] = audio or false
+
         if phoneCall and Config.Voice.CallEffects then
             MumbleSetSubmixForServerId(id, speakerEffect)
         end
+
         debugprint("Added voice target", id, audio)
 
         ::continue::
@@ -179,21 +187,25 @@ end)
 
 RegisterNetEvent("phone:phone:removeVoiceTarget", function(sources, phoneCall)
     if type(sources) ~= "table" then
-        sources = {sources}
+        sources = { sources }
     end
 
     for i = 1, #sources do
         local id = sources[i]
+
         if id == GetPlayerServerId(PlayerId()) then
             goto continue
         end
 
         voiceTargets[id] = nil
+
         MumbleRemoveVoiceTargetPlayerByServerId(1, id)
         MumbleSetVolumeOverrideByServerId(id, -1.0)
+
         if phoneCall and Config.Voice.CallEffects then
             MumbleSetSubmixForServerId(id, -1)
         end
+
         debugprint("Removed voice target", id)
 
         ::continue::
@@ -207,6 +219,7 @@ RegisterNetEvent("phone:instagram:enteredProximity", function(source, liveHost)
     end
 
     local player = GetPlayerFromServerId(source)
+
     if player and player ~= -1 and #(GetEntityCoords(GetPlayerPed(player)) - GetEntityCoords(PlayerPedId())) <= 15 then
         return
     end
@@ -221,13 +234,8 @@ RegisterNetEvent("phone:instagram:leftProximity", function(source, liveHost)
     end
 
     voiceTargets[source] = nil
+
     MumbleRemoveVoiceTargetPlayerByServerId(1, source)
     MumbleSetVolumeOverrideByServerId(source, -1.0)
     debugprint("Removing live target", source)
 end)
-
--- local _MumbleSetVolumeOverrideByServerId = MumbleSetVolumeOverrideByServerId
--- function MumbleSetVolumeOverrideByServerId(source, volume)
---     _MumbleSetVolumeOverrideByServerId(source, volume)
---     debugprint("MumbleSetVolumeOverrideByServerId", source, volume)
--- end

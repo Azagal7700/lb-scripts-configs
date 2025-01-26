@@ -4,7 +4,7 @@ if Config.Companies.DefaultCallsDisabled then
     TriggerServerEvent("phone:phone:disableCompanyCalls", true)
 end
 
-local function getCompany(company)
+local function GetCompany(company)
     for i = 1, #Config.Companies.Services do
         local jobData = Config.Companies.Services[i]
 
@@ -14,10 +14,10 @@ local function getCompany(company)
     end
 end
 
-local function formatRecentMessages(messages)
+local function FormatRecentMessages(messages)
     for i = 1, #messages do
         local message = messages[i]
-        local jobData = getCompany(message.company)
+        local jobData = GetCompany(message.company)
 
         message.number = message.phone_number
         message.lastMessage = message.last_message
@@ -110,7 +110,7 @@ RegisterNUICallback("Services", function(data, cb)
         TriggerServerEvent("phone:phone:disableCompanyCalls", callsDisabled)
         cb(not callsDisabled)
     elseif action == "customIconClick" then
-        local jobData = getCompany(data.company)
+        local jobData = GetCompany(data.company)
         if jobData?.onCustomIconClick then
             jobData.onCustomIconClick()
         end
@@ -123,7 +123,7 @@ RegisterNUICallback("Services", function(data, cb)
         TriggerCallback("services:sendMessage", cb, data.id, data.company, data.content)
     elseif action == "getRecentMessages" then
         TriggerCallback("services:getRecentMessages", function(messages)
-            cb(formatRecentMessages(messages))
+            cb(FormatRecentMessages(messages))
         end, data.page)
     elseif action == "getChannelId" then
         TriggerCallback("services:getChannelId", cb, data.company)
