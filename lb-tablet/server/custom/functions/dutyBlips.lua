@@ -2,15 +2,17 @@ if not Config.Police.DutyBlips and not Config.Ambulance.DutyBlips then
     return
 end
 
----@class Officer
+---@class StrippedOfficer
 ---@field source number
----@field identifier string
 ---@field name string
 ---@field callsign? string
 ---@field avatar? string
----@field coords? vector3
+---@field coords? vector3 | vector2
 ---@field heading? number
 ---@field inVehicle? boolean
+
+---@class Officer : StrippedOfficer
+---@field identifier string
 
 ---@type Officer[]
 local policeOfficers = {}
@@ -22,6 +24,7 @@ OnPlayerDisconnect(function(source)
         if policeOfficers[i].source == source then
             table.remove(policeOfficers, i)
             debugprint("Removed player from policeOfficers as they logged out", source)
+
             break
         end
     end
@@ -30,6 +33,7 @@ OnPlayerDisconnect(function(source)
         if ambulanceOfficers[i].source == source then
             table.remove(ambulanceOfficers, i)
             debugprint("Removed player from ambulanceOfficers as they logged out", source)
+
             break
         end
     end
@@ -125,6 +129,8 @@ end)
 ---@param getAvatar function
 ---@param event string
 local function UpdateOfficerBlips(officers, getCallsign, getAvatar, event)
+    local officersToSend = {}
+
     for i = 1, #officers do
         local officer = officers[i]
         local playerPed = GetPlayerPed(officer.source)
@@ -136,24 +142,42 @@ local function UpdateOfficerBlips(officers, getCallsign, getAvatar, event)
             officer.heading = GetEntityHeading(playerPed)
             officer.inVehicle = GetVehiclePedIsIn(playerPed, false) ~= 0
         end
+
+        officersToSend[i] = {
+            officer.source,
+            officer.name,
+            officer.callsign,
+            officer.avatar,
+            {
+                math.floor(officer.coords.x + 0.5),
+                math.floor(officer.coords.y + 0.5)
+            },
+            math.floor(officer.heading + 0.5),
+            officer.inVehicle
+        }
     end
 
-    TriggerClientEvent(event, -1, officers)
+    local payload = msgpack.pack_args(officersToSend)
+    local length = #payload
+
+    for i = 1, #officers do
+        ---@diagnostic disable-next-line: param-type-mismatch
+        TriggerClientEventInternal(event, officers[i].source, payload, length)
+    end
 end
 
 Wait(2500)
 
-local interval = math.floor(math.min(Config.DutyBlipInterval or 5000, 1000))
-CreateThread(function ()
-    while true do
-        if Config.Police.DutyBlips then
-            UpdateOfficerBlips(policeOfficers, GetPoliceCallsign, GetPoliceAvatar, "tablet:police:updateOfficerBlips")
-        end
+local interval = math.floor(math.max(Config.DutyBlipInterval or 5000, 1000))
 
-        if Config.Ambulance.DutyBlips then
-            UpdateOfficerBlips(ambulanceOfficers, GetAmbulanceCallsign, GetAmbulanceAvatar, "tablet:ambulance:updateOfficerBlips")
-        end
-
-        Wait(interval)
+while true do
+    if Config.Police.DutyBlips then
+        UpdateOfficerBlips(policeOfficers, GetPoliceCallsign, GetPoliceAvatar, "tablet:police:updateOfficerBlips")
     end
-end)
+
+    if Config.Ambulance.DutyBlips then
+        UpdateOfficerBlips(ambulanceOfficers, GetAmbulanceCallsign, GetAmbulanceAvatar, "tablet:ambulance:updateOfficerBlips")
+    end
+
+    Wait(interval)
+end

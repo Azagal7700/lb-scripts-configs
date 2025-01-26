@@ -111,6 +111,7 @@ end)
 RegisterNetEvent("ps-dispatch:server:notify", function(dispatch)
     local src = source
     local playerPed = GetPlayerPed(src)
+
     dispatch.coords = dispatch.coords or GetEntityCoords(playerPed)
 
     PsDispatchAlert(dispatch)
@@ -148,6 +149,25 @@ RegisterNetEvent("police:server:policeAlert", function(title)
         description = title or "",
         location = {
             label = "Unknown",
+            coords = vector2(coords.x, coords.y),
+        },
+        time = 120
+    })
+end)
+
+RegisterNetEvent("hospital:server:ambulanceAlert", function(text)
+	local src = source
+	local ped = GetPlayerPed(src)
+	local coords = GetEntityCoords(ped)
+
+    AddDispatch({
+        job = "ambulance",
+        priority = "medium",
+        code = "",
+        title = text or "Dispatch",
+        description = text or "",
+        location = {
+            label = "Location",
             coords = vector2(coords.x, coords.y),
         },
         time = 120

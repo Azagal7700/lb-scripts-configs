@@ -27,7 +27,7 @@
         },
         "Ambulance": {
             "name": "Ambulance",
-            "icon": "./assets/img/icons/apps/Ambulance.webp",
+            "icon": "./assets/img/icons/apps/Ambulance.png",
             "removable": false
         },
         "Registration": {

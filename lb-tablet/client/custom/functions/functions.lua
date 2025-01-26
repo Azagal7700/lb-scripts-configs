@@ -125,6 +125,7 @@ local instructionalButtons = {
     b_195 = "arrow_down",
     b_196 = "arrow_left",
     b_197 = "arrow_right",
+    b_1004 = "Backspace"
 }
 
 function GetInstructionalButtonName(button)
@@ -134,7 +135,7 @@ function GetInstructionalButtonName(button)
         return name
     end
 
-    infoprint("warning", "Unknown button: " .. button)
+    infoprint("warning", "Unknown button: " .. button .. "\nYou can add more buttons manually in lb-tablet/client/custom/functions/functions.lua, in the `instructionalButtons` table.")
 
     return "??"
 end
