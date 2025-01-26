@@ -322,13 +322,11 @@ end
 ---@param companies string[]
 ---@return table
 function GetEmployees(companies)
-    debugprint("GetEmployees", "start for", companies)
     local employees = {}
     local phoneConfig = GetPhoneConfig()
     local numberTable = phoneConfig?.Item.Unique and "phone_last_phone" or "phone_phones"
-    debugprint("numberTable", numberTable)
 
-    for _, company in ipairs(companies) do
+    for _, company in pairs(companies) do
         local societyRanksData = exports["gamemode"]:GET_RANK_FROM_SOCIETY(company)
         local societyRanks = {}
         for rankIndex, rank in pairs(societyRanksData) do
@@ -346,7 +344,7 @@ function GetEmployees(companies)
             FROM users u
 
             LEFT JOIN lbtablet_police_accounts a ON a.id = u.identifier %s
-            LEFT JOIN %s p ON u.identifier = p.id COLLATE UTF8MB4_GENERAL_CI
+            LEFT JOIN %s p ON  p.id = u.identifier COLLATE UTF8MB4_GENERAL_CI
             WHERE u.job = ?
         ]]):format(usersCollate, numberTable), { company })
 
