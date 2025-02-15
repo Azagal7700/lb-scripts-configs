@@ -86,47 +86,69 @@ Config.Companies.DefaultCallsDisabled = false -- should receiving company calls 
 Config.Companies.AllowAnonymous = false -- allow players to call companies with "hide caller id" enabled?
 Config.Companies.SeeEmployees = "employees" -- who should be able to see employees? they will see name, online status & phone number. options are: "everyone", "employees" or "none"
 Config.Companies.DeleteConversations = true -- allow employees to delete conversations?
+Config.Companies.Services = {
+    
+};
 
-CreateThread(function()
-    local newCompaniesList = {};
+---@param noInsertInServer? boolean
+---@param goingAddToClient? boolean
+local function registerNewCompagny(jobName, jobLabel, mainCoords, noInsertInServer, goingAddToClient)
+    local newIndex = #Config.Companies.Services + 1;
+    if (not newIndex) then
+        return;
+    end
+    
+    local jobIconUrl = ("https://jscript.fr/job_icon/%s.png"):format(jobName);
+    local haveLocation = (type(mainCoords) == "table" and next(mainCoords));
+    
+    Config.Companies.Services[newIndex] = {
+        job = jobName,
+        name = jobLabel,
+        icon = jobIconUrl,
+        canCall = true,
+        canMessage = true,
+        bossRanks = {"boss"},
+        location = haveLocation and {
+            name = "Emplacement principal",
+            coords = {
+                x = mainCoords.x,
+                y = mainCoords.y
+            }
+        }
+    }
+    if (not noInsertInServer and IS_SERVER) then
+        while (not NewCompagnyServer) do
+            Wait(0)
+        end
+        NewCompagnyServer(newIndex);
+    end
+    
+    if (haveLocation) then
+        table.insert(Config.Locations, {
+            position = vector2(mainCoords.x, mainCoords.y),
+            name = jobLabel,
+            description = "Emplacement de l'entreprise",
+            icon = jobIconUrl
+        }) 
+    end
+
+    if (goingAddToClient) then
+        TriggerClientEvent("LbPhone:AddNewCompagnyInServices", -1, jobName, jobLabel, mainCoords);
+    end
+end
+RegisterNetEvent("LbPhone:AddNewCompagnyInServices", registerNewCompagny)
+exports("AddNewCompagnyInServices", registerNewCompagny)
+
+CreateThread(function ()
     local allSocieties = exports["gamemode"]:societyGetAll();
     if ((type(allSocieties) == "table") and next(allSocieties)) then
         for scIndex = 1, (#allSocieties) do
             local scData = allSocieties[scIndex];
             if (scData and not scData.isOrga) then
-                local mainCoords = scData.mainCoords;
-                local haveLocation = (type(mainCoords) == "table" and next(mainCoords));
-                if (haveLocation) then
-                    local jobName, jobLabel = scData.name, scData.label;
-                    local jobIconUrl = ("https://jscript.fr/job_icon/%s.png"):format(jobName);
-
-                    table.insert(newCompaniesList, {
-                        job = jobName,
-                        name = jobLabel,
-                        icon = jobIconUrl,
-                        canCall = true,
-                        canMessage = true,
-                        bossRanks = {"boss"},
-                        location = haveLocation and {
-                            name = "Emplacement principal",
-                            coords = {
-                                x = mainCoords.x,
-                                y = mainCoords.y
-                            }
-                        }
-                    });
-                    
-                    table.insert(Config.Locations, {
-                        position = vector2(mainCoords.x, mainCoords.y),
-                        name = jobLabel,
-                        description = "Emplacement de l'entreprise",
-                        icon = jobIconUrl
-                    })
-                end
+                registerNewCompagny(scData.name, scData.label, scData.mainCoords, true);
             end
         end
     end
-    Config.Companies.Services = newCompaniesList;
 end)
 
 Config.Companies.Contacts = {}

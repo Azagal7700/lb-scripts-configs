@@ -406,29 +406,35 @@ function RefreshCompanies()
     end
 end
 
-CreateThread(function ()
-    while (not Config.Companies.Services) do
-        Wait(1000);
+---@param jobDataIndex number
+function NewCompagnyServer(jobDataIndex)
+    local jobData = Config.Companies.Services[jobDataIndex]
+    if (not jobData) then
+        return;
     end
+
+    local jobKey = ("%s:count"):format(jobData.job)
+
+    AddStateBagChangeHandler(jobKey, "global", function(_, _, value)
+        Wait(0) -- prevent print from showing in F8 when using command
+
+        if type(value) ~= "number" then
+            return
+        end
+
+        local isOpen = value > 0
+
+        if jobData.open ~= isOpen then
+            jobData.open = isOpen
+            TriggerClientEvent("phone:services:updateOpen", -1, jobData.job, isOpen)
+        end
+
+        debugprint(("Job count for job ^5%s^7 changed. Is open: %s"):format(jobData.job, jobData.open))
+    end)
+end
+
+CreateThread(function ()
     for i = 1, #Config.Companies.Services do
-        local jobData = Config.Companies.Services[i]
-        local jobKey = ("%s:count"):format(jobData.job)
-    
-        AddStateBagChangeHandler(jobKey, "global", function(_, _, value)
-            Wait(0) -- prevent print from showing in F8 when using command
-    
-            if type(value) ~= "number" then
-                return
-            end
-    
-            local isOpen = value > 0
-    
-            if jobData.open ~= isOpen then
-                jobData.open = isOpen
-                TriggerClientEvent("phone:services:updateOpen", -1, jobData.job, isOpen)
-            end
-    
-            debugprint(("Job count for job ^5%s^7 changed. Is open: %s"):format(jobData.job, jobData.open))
-        end)
+        NewCompagnyServer(i);
     end
 end)

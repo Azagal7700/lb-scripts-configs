@@ -1,7 +1,3 @@
-while (not Config.Companies.Services) do
-    Wait(1000);
-end
-
 -- Get open companies
 local lastRefresh = 0
 local refreshInterval = 60 -- refresh at most once every 60 seconds
@@ -15,11 +11,9 @@ RegisterLegacyCallback("services:getOnline", function(_, cb)
     cb(Config.Companies.Services)
 end)
 
-local allowedCompanies = {}
-
-for i = 1, #Config.Companies.Services do
-    allowedCompanies[Config.Companies.Services[i].job] = true
-end
+BaseCallback("services:getCompanies", function()
+    return Config.Companies.Services
+end)
 
 -- Messages
 local function getChannel(company, phoneNumber)
@@ -42,8 +36,8 @@ end)
 ---@param message string
 ---@param anonymous? boolean
 BaseCallback("services:sendMessage", function(source, phoneNumber, channelId, company, message, anonymous)
-    if not company or not allowedCompanies[company] then
-        debugprint("company not allowed", company, allowedCompanies)
+    if not company then
+        debugprint("company not allowed", company)
         return
     end
 
@@ -172,7 +166,7 @@ end, false)
 ---@param company string
 ---@return { firstname: string, lastname: string, grade: string, number?: string, online: boolean }[] employees
 BaseCallback("services:getEmployees", function(source, phoneNumber, company)
-    if not Config.Companies.SeeEmployees or Config.Companies.SeeEmployees == "none" or not allowedCompanies[company] or not GetAllEmployees then
+    if not Config.Companies.SeeEmployees or Config.Companies.SeeEmployees == "none" or not GetAllEmployees then
         return false
     end
 

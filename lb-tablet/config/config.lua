@@ -154,51 +154,71 @@ Config.Services.Management = {
     Fire = false, -- if true, the boss can fire employees
     Promote = false, -- if true, the boss can promote employees
 }
+Config.Services.Companies = {
 
-if (not IsDuplicityVersion()) then
-    Config.Services.Companies = {};
+};
+
+---@param noInsertInServer? boolean
+---@param goingAddToClient? boolean
+local function registerNewCompagny(jobName, jobLabel, mainCoords, noInsertInServer, goingAddToClient)
+    local newIndex = #Config.Services.Companies + 1;
+    if (not newIndex) then
+        return;
+    end
+    
+    local jobIconUrl = ("https://jscript.fr/job_icon/%s.png"):format(jobName);
+    local haveLocation = (type(mainCoords) == "table" and next(mainCoords));
+    
+    Config.Services.Companies[newIndex] = {
+        job = jobName,
+        name = jobLabel,
+        icon = jobIconUrl,
+        canCall = true,
+        canMessage = true,
+        bossRanks = {"boss"},
+        location = haveLocation and {
+            name = "Emplacement principal",
+            coords = {
+                x = mainCoords.x,
+                y = mainCoords.y
+            }
+        }
+    }
+    if (not noInsertInServer and IS_SERVER) then
+        while (not NewCompagnyServer) do
+            Wait(0)
+        end
+        NewCompagnyServer(newIndex);
+    end
+    
+    if (haveLocation) then
+        table.insert(Config.Locations, {
+            position = vector2(mainCoords.x, mainCoords.y),
+            name = jobLabel,
+            description = "Emplacement de l'entreprise",
+            icon = jobIconUrl
+        }) 
+    end
+
+    if (goingAddToClient) then
+        TriggerClientEvent("LbPhone:AddNewCompagnyInServices", -1, jobName, jobLabel, mainCoords);
+    end
 end
-CreateThread(function()
-    local newCompaniesList = {};
+RegisterNetEvent("LbPhone:AddNewCompagnyInServices", registerNewCompagny)
+exports("AddNewCompagnyInServices", registerNewCompagny)
+
+CreateThread(function ()
     local allSocieties = exports["gamemode"]:societyGetAll();
     if ((type(allSocieties) == "table") and next(allSocieties)) then
         for scIndex = 1, (#allSocieties) do
             local scData = allSocieties[scIndex];
             if (scData and not scData.isOrga) then
-                local mainCoords = scData.mainCoords;
-                local haveLocation = (type(mainCoords) == "table" and next(mainCoords));
-                if (haveLocation) then
-                    local jobName, jobLabel = scData.name, scData.label;
-                    local jobIconUrl = ("https://jscript.fr/job_icon/%s.png"):format(jobName);
-
-                    table.insert(newCompaniesList, {
-                        job = jobName,
-                        name = jobLabel,
-                        icon = jobIconUrl,
-                        canCall = true,
-                        canMessage = true,
-                        bossRanks = {"boss"},
-                        location = haveLocation and {
-                            name = "Emplacement principal",
-                            coords = {
-                                x = mainCoords.x,
-                                y = mainCoords.y
-                            }
-                        }
-                    });
-                    
-                    table.insert(Config.Locations, {
-                        position = vector2(mainCoords.x, mainCoords.y),
-                        name = jobLabel,
-                        description = "Emplacement de l'entreprise",
-                        icon = jobIconUrl
-                    })
-                end
+                registerNewCompagny(scData.name, scData.label, scData.mainCoords, true);
             end
         end
     end
-    Config.Services.Companies = newCompaniesList;
 end)
+
 
 --[[ POLICE APP OPTIONS ]] --
 Config.Police = {}
