@@ -54,7 +54,7 @@ RegisterNUICallback("Services", function(data, cb)
     local action = data.action
     debugprint("Services:" .. (action or ""))
 
-    if contains(antiSpamActions, action) then
+    if table.contains(antiSpamActions, action) then
         if not CanInteract() then
             return cb(false)
         end

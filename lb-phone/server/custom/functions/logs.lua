@@ -170,11 +170,20 @@ function Log(action, source, level, title, metadata, image)
 	end
 
 	if Config.Logs.Service == "ox_lib" then
-        if source then
-            ---@diagnostic disable-next-line: undefined-global
-            lib.Logger(source, level, title)
+        ---@diagnostic disable-next-line: undefined-global
+        if not lib or GetResourceState("ox_lib") ~= "started" then
+            infoprint("error", "Config.Logs.Service is set to 'ox_lib', but ox_lib is not started. To log using ox_lib, you need to install ox_lib from https://github.com/overextended/ox_lib/releases/latest.")
+            return
         end
+
+        ---@diagnostic disable-next-line: undefined-global
+        lib.Logger(source or -1, level, title)
     elseif Config.Logs.Service == "fivemanage" then
+        if GetResourceState("fmsdk") ~= "started" then
+            infoprint("error", "Config.Logs.Service is set to 'fivemanage', but fmsdk is not started. To log using Fivemanage, you need to install fmsdk from https://github.com/fivemanage/sdk/releases/latest.")
+            return
+        end
+
         if not metadata then
             metadata = {}
         end
@@ -196,8 +205,11 @@ function Log(action, source, level, title, metadata, image)
     end)
 end
 
+Wait(0)
+
 if Config.Logs?.Enabled and Config.Logs?.Service == "ox_lib" then
-	debugprint("Logs set to ox_lib, loading..")
+	debugprint("Logs set to ox_lib, loading...")
+
 	local oxInit = LoadResourceFile("ox_lib", "init.lua")
 
     if oxInit then
@@ -209,14 +221,6 @@ if Config.Logs?.Enabled and Config.Logs?.Service == "ox_lib" then
         infoprint("error", "Failed to load ox_lib")
     end
 end
-
-AddEventHandler("playerDropped", function()
-    avatars[source] = nil
-end)
-
-Wait(0)
-
-
 
 if Config.Logs?.Enabled and Config.Logs?.Service == "discord" then
     ---@type string?
@@ -249,18 +253,8 @@ if Config.Logs?.Enabled and Config.Logs?.Service == "discord" then
 
         ::continue::
     end
-
-    -- for k, webhook in pairs(LOGS) do
-    --     if not webhook or webhook == "https://discord.com/api/webhooks/" then
-    --         infoprint("warning", "^3LOGS^5[\"" .. k .. "\"]^7 has not been set in lb-phone/server/apiKeys.lua")
-
-    --         if k == "Default" or not LOGS.Default then
-    --             LOGS[k] = nil
-    --         else
-    --             infoprint("info", "Using default webhook for ^3LOGS^5[\"" .. k .. "\"]")
-
-    --             LOGS[k] = LOGS.Default
-    --         end
-    --     end
-    -- end
 end
+
+AddEventHandler("playerDropped", function()
+    avatars[source] = nil
+end)

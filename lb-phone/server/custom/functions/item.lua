@@ -19,6 +19,7 @@ function HasPhoneItem(source, number)
         for i = 1, #Config.Item.Names do
             if HasItem(source, Config.Item.Names[i].name) then
                 hasItem = true
+
                 break
             end
         end
@@ -32,8 +33,16 @@ function HasPhoneItem(source, number)
         return hasItem
     end
 
+    local equippedNumber = GetEquippedPhoneNumber(source)
+
+    if equippedNumber then
+        return equippedNumber == number
+    end
+
     return MySQL.scalar.await(
         "SELECT 1 FROM phone_phones WHERE id = ? AND phone_number = ?",
         { GetIdentifier(source), number }
     ) ~= nil
 end
+
+exports("HasPhoneItem", HasPhoneItem)

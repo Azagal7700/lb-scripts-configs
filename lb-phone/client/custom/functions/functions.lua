@@ -201,3 +201,5 @@ function HasPhoneItem(number)
 
     return false
 end
+
+exports("HasPhoneItem", HasPhoneItem)

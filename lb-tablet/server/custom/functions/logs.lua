@@ -168,6 +168,11 @@ function Log(source, action, level, title, metadata, image)
             lib.Logger(source, level, title)
         end
     elseif Config.Logs.Service == "fivemanage" then
+        if GetResourceState("fmsdk") ~= "started" then
+            infoprint("error", "Config.Logs.Service is set to 'fivemanage', but fmsdk is not started. To log using Fivemanage, you need to install fmsdk from https://github.com/fivemanage/sdk/releases/latest.")
+            return
+        end
+
         if not metadata then
             metadata = {}
         end
@@ -175,19 +180,19 @@ function Log(source, action, level, title, metadata, image)
         metadata.playerSource = source
 
         exports.fmsdk:LogMessage(level, title, metadata)
-    elseif Config.Logs.Service ~= "discord" then
+    elseif Config.Logs.Service == "discord" then
+        if not LOG_WEBHOOKS?.Default then
+            infoprint("error", "Config.Logs.Service is set to discord, but no default discord webhook has been set in lb-tablet/server/apiKeys.lua")
+            return
+        end
+
+        Citizen.CreateThreadNow(function()
+            LogToDiscord(source, action, level, title, metadata, image)
+        end)
+    else
         infoprint("error", "Config.Logs.Service is set to an invalid value")
 		return
 	end
-
-    if not LOG_WEBHOOKS?.Default then
-		infoprint("error", "Config.Logs.Service is set to discord, but no default discord webhook has been set in lb-tablet/server/apiKeys.lua")
-		return
-	end
-
-    Citizen.CreateThreadNow(function()
-        LogToDiscord(source, action, level, title, metadata, image)
-    end)
 end
 
 if Config.Logs?.Enabled and Config.Logs?.Service == "ox_lib" then
@@ -208,7 +213,7 @@ AddEventHandler("playerDropped", function()
     avatars[source] = nil
 end)
 
-Wait(0)
+Wait(0) -- show the warnings in the server console instead of the chat
 
 if Config.Logs.Enabled then
     for k, webhook in pairs(LOG_WEBHOOKS) do

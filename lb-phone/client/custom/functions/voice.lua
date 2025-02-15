@@ -143,7 +143,7 @@ CreateThread(function()
         for source, audio in pairs(currentTargets) do
             MumbleAddVoiceTargetPlayerByServerId(1, source)
 
-            if contains(watchingSources, source) then
+            if table.contains(watchingSources, source) then
                 MumbleSetVolumeOverrideByServerId(source, 1.0)
             else
                 debugprint("volume:", audio and 0.7 or -1.0)
@@ -214,7 +214,7 @@ end)
 
 -- instagram proximity
 RegisterNetEvent("phone:instagram:enteredProximity", function(source, liveHost)
-    if not contains(watchingSources, liveHost) then -- if we're not watching "liveHost", don't listen to "source"
+    if not table.contains(watchingSources, liveHost) then -- if we're not watching "liveHost", don't listen to "source"
         return
     end
 
@@ -229,7 +229,7 @@ RegisterNetEvent("phone:instagram:enteredProximity", function(source, liveHost)
 end)
 
 RegisterNetEvent("phone:instagram:leftProximity", function(source, liveHost)
-    if not contains(watchingSources, liveHost) then -- if we're not watching "liveHost", don't listen to "source"
+    if not table.contains(watchingSources, liveHost) then -- if we're not watching "liveHost", don't listen to "source"
         return
     end
 
